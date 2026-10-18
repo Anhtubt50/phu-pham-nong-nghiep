@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriLoop - Sàn Giao Dịch Phụ Phẩm Nông Nghiệp</title>
+    
+    <!-- Cài đặt Tailwind CSS qua CDN để thiết kế giao diện hiện đại, responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Cấu hình màu sắc thương hiệu AgriLoop -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        agri: {
+                            light: '#e8f5e9',
+                            main: '#2e7d32',
+                            dark: '#1b5e20',
+                            earth: '#795548',
+                            accent: '#ffb300'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome cho các biểu tượng -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Các CSS cơ bản bổ sung cho Tailwind */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9fafb; scroll-behavior: smooth; }
+        .page-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Hiệu ứng ảnh */
+        .img-hover-zoom { transition: transform 0.3s ease; }
+        .group:hover .img-hover-zoom { transform: scale(1.05); }
+        
+        /* Ẩn thanh cuộn nhưng vẫn cuộn được (cho thư viện ảnh) */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Toast Notification */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+        .toast { background: white; border-left: 4px solid #2e7d32; padding: 15px 20px; margin-top: 10px; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; animation: slideInRight 0.3s ease-out; }
+        .toast.error { border-left-color: #ef4444; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body class="text-gray-800 antialiased flex flex-col min-h-screen">
+
+    <!-- HEADER & NAVIGATION -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <div class="flex items-center cursor-pointer" onclick="navigate('home')">
+                    <i class="fa-solid fa-leaf text-agri-main text-3xl mr-2"></i>
+                    <span class="text-2xl font-bold text-agri-dark tracking-tight">Agri<span class="text-agri-main">Loop</span></span>
+                </div>
+
+                <!-- Desktop Nav -->
+                <nav class="hidden md:flex space-x-8 font-medium text-gray-600">
+                    <a href="#" onclick="navigate('home')" class="nav-link hover:text-agri-main transition-colors" data-target="home">Trang chủ</a>
+                    <a href="#" onclick="navigate('marketplace')" class="nav-link hover:text-agri-main transition-colors" data-target="marketplace">Chợ phụ phẩm</a>
+                    <a href="#" onclick="navigate('post-product')" class="nav-link hover:text-agri-main transition-colors" data-target="post-product">Đăng bán</a>
+                    <a href="#" onclick="navigate('about')" class="nav-link hover:text-agri-main transition-colors" data-target="about">Giới thiệu</a>
+                </nav>
+
+                <!-- Auth / User Menu -->
+                <div class="hidden md:flex items-center space-x-4" id="auth-container">
+                    <!-- Sẽ được render bằng JS tùy trạng thái đăng nhập -->
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden text-gray-600 focus:outline-none" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                    <i class="fa-solid fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Nav -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-3">
+            <a href="#" onclick="navigate('home')" class="block text-gray-600">Trang chủ</a>
+            <a href="#" onclick="navigate('marketplace')" class="block text-gray-600">Chợ phụ phẩm</a>
+            <a href="#" onclick="navigate('post-product')" class="block text-gray-600">Đăng bán</a>
+            <div id="mobile-auth-container" class="border-t pt-3 mt-3"></div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-grow">
+        
+        <!-- ==================== 1. TRANG CHỦ ==================== -->
+        <section id="page-home" class="page-section active">
+            
+            <!-- Hero Banner -->
+            <div class="relative bg-gray-900 h-[500px] overflow-hidden">
+                <!-- 
+                    HƯỚNG DẪN THAY ẢNH BANNER:
+                    1. Tạo thư mục 'images' ngang hàng với file index.html này.
+                    2. Lưu ảnh của bạn vào thư mục đó, ví dụ: 'banner-nong-nghiep.jpg'.
+                    3. Sửa thuộc tính src bên dưới thành src="images/banner-nong-nghiep.jpg".
+                    Lưu ý: onerror xử lý khi bạn chưa có ảnh thật, nó sẽ hiện ảnh tạm.
+                -->
+                <img src="images/banner-nong-nghiep.jpg" 
+                     onerror="this.src='https://images.unsplash.com/photo-1595981267035-7b04d9a5628b?q=80&w=1920&auto=format&fit=crop'" 
+                     alt="Nông nghiệp tuần hoàn" 
+                     class="absolute inset-0 w-full h-full object-cover opacity-50">
+                
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+                    <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 shadow-sm">Phụ phẩm hôm nay,<br><span class="text-agri-light">Tài nguyên ngày mai</span></h1>
+                    <p class="text-lg md:text-xl text-gray-200 mb-8 max-w-2xl">Nền tảng giao dịch phụ phẩm nông nghiệp lớn nhất Việt Nam, kết nối nguồn cung - cầu, thúc đẩy kinh tế tuần hoàn và phát triển bền vững.</p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 w-full max-w-lg justify-center">
+                        <button onclick="navigate('marketplace')" class="bg-agri-main hover:bg-agri-dark text-white px-8 py-3 rounded-lg font-medium transition-all transform hover:scale-105">
+                            Khám phá sản phẩm
+                        </button>
+                        <button onclick="navigate('post-product')" class="bg-white hover:bg-gray-100 text-agri-dark px-8 py-3 rounded-lg font-medium transition-all transform hover:scale-105 border-2 border-transparent">
+                            Đăng bán phụ phẩm
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thanh tìm kiếm nhanh -->
+            <div class="container mx-auto px-4 -mt-8 relative z-10">
+                <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 flex flex-col md:flex-row gap-4 items-center">
+                    <div class="flex-grow w-full relative">
+                        <i class="fa-solid fa-search absolute left-4 top-3.5 text-gray-400"></i>
+                        <input type="text" id="home-search" placeholder="Bạn đang tìm phụ phẩm gì? (VD: Rơm, Trấu, Bã mía...)" class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-agri-main focus:ring-1 focus:ring-agri-main">
+                    </div>
+                    <button onclick="performHomeSearch()" class="w-full md:w-auto bg-agri-dark text-white px-8 py-3 rounded-lg font-medium hover:bg-agri-main transition-colors">
+                        Tìm kiếm
+                    </button>
+                </div>
+            </div>
+
+            <!-- Danh mục phổ biến -->
+            <div class="container mx-auto px-4 py-16">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">Danh Mục Phụ Phẩm</h2>
+                <p class="text-center text-gray-500 mb-10">Các loại nguyên liệu dồi dào, sẵn sàng phục vụ sản xuất</p>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    <!-- Giao diện render danh mục -->
+                    <div onclick="filterByCategory('Trấu & Tro trấu')" class="bg-white rounded-xl shadow-sm hover:shadow-md p-6 flex flex-col items-center cursor-pointer transition-all border border-gray-100 hover:border-agri-main">
+                        <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-4 text-yellow-600 text-2xl"><i class="fa-solid fa-wheat-awn"></i></div>
+                        <h3 class="font-medium text-gray-800 text-center">Trấu & Tro</h3>
+                    </div>
+                    <div onclick="filterByCategory('Rơm rạ')" class="bg-white rounded-xl shadow-sm hover:shadow-md p-6 flex flex-col items-center cursor-pointer transition-all border border-gray-100 hover:border-agri-main">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-green-600 text-2xl"><i class="fa-brands fa-pagelines"></i></div>
+                        <h3 class="font-medium text-gray-800 text-center">Rơm rạ</h3>
+                    </div>
+                    <div onclick="filterByCategory('Bã mía & Bã sắn')" class="bg-white rounded-xl shadow-sm hover:shadow-md p-6 flex flex-col items-center cursor-pointer transition-all border border-gray-100 hover:border-agri-main">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4 text-purple-600 text-2xl"><i class="fa-solid fa-leaf"></i></div>
+                        <h3 class="font-medium text-gray-800 text-center">Bã mía / sắn</h3>
+                    </div>
+                    <div onclick="filterByCategory('Vỏ cà phê, Vỏ điều')" class="bg-white rounded-xl shadow-sm hover:shadow-md p-6 flex flex-col items-center cursor-pointer transition-all border border-gray-100 hover:border-agri-main">
+                        <div class="w-16 h-16 bg-brown-100 rounded-full flex items-center justify-center mb-4 text-agri-earth text-2xl" style="background-color: #efebe9;"><i class="fa-solid fa-mug-hot"></i></div>
+                        <h3 class="font-medium text-gray-800 text-center">Vỏ cà phê</h3>
+                    </div>
+                    <div onclick="filterByCategory('Phân hữu cơ')" class="bg-white rounded-xl shadow-sm hover:shadow-md p-6 flex flex-col items-center cursor-pointer transition-all border border-gray-100 hover:border-agri-main hidden lg:flex">
+                        <div class="w-16 h-16 bg-agri-light rounded-full flex items-center justify-center mb-4 text-agri-main text-2xl"><i class="fa-solid fa-seedling"></i></div>
+                        <h3 class="font-medium text-gray-800 text-center">Phân hữu cơ</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sản phẩm nổi bật (Render bằng JS) -->
+            <div class="bg-gray-50 py-16 border-y border-gray-200">
+                <div class="container mx-auto px-4">
+                    <div class="flex justify-between items-end mb-8">
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800 mb-2">Sản Phẩm Mới & Nổi Bật</h2>
+                            <p class="text-gray-500">Nguồn cung chất lượng cao từ các hợp tác xã uy tín</p>
+                        </div>
+                        <button onclick="navigate('marketplace')" class="text-agri-main font-medium hover:underline hidden md:block">Xem tất cả <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                    </div>
+                    
+                    <!-- Vùng chứa thẻ sản phẩm nổi bật -->
+                    <div id="home-featured-products" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        <!-- JS sẽ đổ dữ liệu vào đây -->
+                    </div>
+                    <button onclick="navigate('marketplace')" class="w-full text-center text-agri-main font-medium mt-8 md:hidden block">Xem tất cả phụ phẩm</button>
+                </div>
+            </div>
+
+            <!-- Thống kê Demo -->
+            <div class="container mx-auto px-4 py-16">
+                <div class="bg-agri-main rounded-2xl shadow-xl overflow-hidden text-white flex flex-col md:flex-row">
+                    <div class="p-8 md:p-12 md:w-1/2 flex flex-col justify-center">
+                        <span class="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full w-max mb-4 uppercase tracking-wider">Mạng lưới kết nối</span>
+                        <h2 class="text-3xl md:text-4xl font-bold mb-4">Mô Hình Tuần Hoàn Nông Nghiệp</h2>
+                        <p class="text-agri-light mb-8 opacity-90">Tham gia hệ sinh thái của chúng tôi để biến chất thải thành nguyên liệu đầu vào, tạo giá trị mới cho ngành nông nghiệp Việt Nam.</p>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <p class="text-3xl font-bold">15,000+</p>
+                                <p class="text-sm text-agri-light">Tấn Phụ Phẩm</p>
+                            </div>
+                            <div>
+                                <p class="text-3xl font-bold">4,500+</p>
+                                <p class="text-sm text-agri-light">Đối Tác</p>
+                            </div>
+                            <div>
+                                <p class="text-3xl font-bold">98%</p>
+                                <p class="text-sm text-agri-light">Hài Lòng</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-white/50 mt-4 italic">*Dữ liệu mang tính chất minh họa (Demo)</p>
+                    </div>
+                    <div class="md:w-1/2 relative min-h-[300px]">
+                        <!-- THAY ẢNH MÔ HÌNH TẠI ĐÂY -->
+                        <img src="images/mo-hinh-tuan-hoan.jpg" 
+                             onerror="this.src='https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&q=80&w=800'" 
+                             alt="Nông nghiệp hữu cơ" class="absolute inset-0 w-full h-full object-cover">
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ==================== 2. CHỢ PHỤ PHẨM ==================== -->
+        <section id="page-marketplace" class="page-section bg-gray-50 py-8 min-h-screen">
+            <div class="container mx-auto px-4">
+                
+                <!-- Tiêu đề & Breadcrumb -->
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800">Chợ Phụ Phẩm</h1>
+                    <p class="text-gray-500 mt-1">Khám phá và kết nối với nguồn nguyên liệu trên toàn quốc</p>
+                </div>
+
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Sidebar Bộ lọc -->
+                    <aside class="w-full lg:w-1/4">
+                        <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 sticky top-24">
+                            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                                <h3 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-filter text-agri-main mr-2"></i>Bộ lọc</h3>
+                                <button onclick="resetFilters()" class="text-sm text-gray-500 hover:text-red-500">Xóa lọc</button>
+                            </div>
+
+                            <!-- Lọc Tìm kiếm -->
+                            <div class="mb-5">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tìm tên sản phẩm</label>
+                                <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Nhập từ khóa..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-agri-main">
+                            </div>
+
+                            <!-- Lọc Danh mục -->
+                            <div class="mb-5">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Danh mục</label>
+                                <select id="filter-category" onchange="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-agri-main">
+                                    <option value="all">Tất cả danh mục</option>
+                                    <option value="Rơm rạ">Rơm rạ</option>
+                                    <option value="Trấu & Tro trấu">Trấu & Tro trấu</option>
+                                    <option value="Bã mía & Bã sắn">Bã mía & Bã sắn</option>
+                                    <option value="Vỏ cà phê, Vỏ điều">Vỏ cà phê, Vỏ điều</option>
+                                    <option value="Mùn cưa, Dăm gỗ">Mùn cưa, Dăm gỗ</option>
+                                    <option value="Phân hữu cơ">Phân hữu cơ</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+
+                            <!-- Lọc Tỉnh thành -->
+                            <div class="mb-5">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Khu vực / Tỉnh thành</label>
+                                <select id="filter-location" onchange="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-agri-main">
+                                    <option value="all">Toàn quốc</option>
+                                    <option value="Đồng bằng sông Cửu Long">Đồng bằng sông Cửu Long</option>
+                                    <option value="Đông Nam Bộ">Đông Nam Bộ</option>
+                                    <option value="Tây Nguyên">Tây Nguyên</option>
+                                    <option value="Miền Trung">Miền Trung</option>
+                                    <option value="Miền Bắc">Miền Bắc</option>
+                                </select>
+                            </div>
+
+                            <!-- Sắp xếp -->
+                            <div class="mb-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Sắp xếp theo</label>
+                                <select id="filter-sort" onchange="applyFilters()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-agri-main">
+                                    <option value="newest">Mới nhất</option>
+                                    <option value="price-asc">Giá: Thấp đến Cao</option>
+                                    <option value="price-desc">Giá: Cao xuống Thấp</option>
+                                </select>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <!-- Danh sách sản phẩm -->
+                    <div class="w-full lg:w-3/4">
+                        <div class="mb-4 text-sm text-gray-500" id="marketplace-stats">
+                            Đang hiển thị <span class="font-bold text-gray-800">0</span> sản phẩm
+                        </div>
+                        
+                        <!-- Lưới sản phẩm -->
+                        <div id="marketplace-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            <!-- Dữ liệu JS -->
+                        </div>
+
+                        <!-- Trạng thái trống -->
+                        <div id="marketplace-empty" class="hidden flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-100">
+                            <i class="fa-solid fa-box-open text-6xl text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-medium text-gray-600">Không tìm thấy sản phẩm nào</h3>
+                            <p class="text-gray-500 mt-2">Vui lòng thay đổi tiêu chí lọc để xem thêm kết quả.</p>
+                            <button onclick="resetFilters()" class="mt-4 text-agri-main font-medium border border-agri-main px-4 py-2 rounded-lg hover:bg-agri-light transition">Xóa bộ lọc</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 3. CHI TIẾT SẢN PHẨM ==================== -->
+        <section id="page-product-detail" class="page-section bg-gray-50 py-8 min-h-screen">
+            <div class="container mx-auto px-4">
+                <!-- Nút quay lại -->
+                <button onclick="navigate('marketplace')" class="text-gray-500 hover:text-agri-main mb-6 flex items-center transition-colors">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Quay lại chợ phụ phẩm
+                </button>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="flex flex-col md:flex-row">
+                        
+                        <!-- Cột Trái: Media (Ảnh & Video) -->
+                        <div class="w-full md:w-1/2 p-6 bg-gray-50/50 border-r border-gray-100">
+                            <!-- Ảnh chính -->
+                            <div class="relative rounded-lg overflow-hidden bg-gray-200 aspect-video md:aspect-square mb-4 border border-gray-200 flex items-center justify-center">
+                                <img id="detail-main-img" src="" alt="Sản phẩm" class="w-full h-full object-cover">
+                            </div>
+                            
+                            <!-- Thư viện Thumbnail (Gồm cả nút xem video nếu có) -->
+                            <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar" id="detail-thumbnails">
+                                <!-- Render JS -->
+                            </div>
+
+                            <!-- Vùng Video Sản phẩm (Ẩn mặc định) -->
+                            <div id="detail-video-container" class="hidden mt-4 rounded-lg overflow-hidden border border-gray-200 bg-black aspect-video relative">
+                                <!-- 
+                                    HƯỚNG DẪN THAY VIDEO:
+                                    - Tạo thư mục 'videos' và đặt video MP4 vào đó.
+                                    - Trong dữ liệu mẫu JS bên dưới, điền tên file, VD: 'video: "videos/gioi-thieu-rom.mp4"'
+                                -->
+                                <video id="detail-video" class="w-full h-full" controls preload="metadata">
+                                    <source src="" type="video/mp4">
+                                    Trình duyệt không hỗ trợ thẻ video.
+                                </video>
+                                <button onclick="closeVideo()" class="absolute top-2 right-2 bg-black/50 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 z-10"><i class="fa-solid fa-times"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Cột Phải: Thông tin -->
+                        <div class="w-full md:w-1/2 p-6 md:p-8 flex flex-col">
+                            <div class="flex justify-between items-start mb-2">
+                                <span id="detail-category" class="bg-agri-light text-agri-dark text-xs font-bold px-2 py-1 rounded">Danh mục</span>
+                                <span id="detail-date" class="text-xs text-gray-400"><i class="fa-regular fa-clock"></i> Hôm nay</span>
+                            </div>
+                            
+                            <h1 id="detail-name" class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 leading-tight">Tên sản phẩm</h1>
+                            
+                            <div class="text-3xl font-bold text-agri-main mb-6" id="detail-price">0 đ / Tấn</div>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-100">
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Khối lượng sẵn có</p>
+                                    <p class="font-medium text-gray-800" id="detail-quantity">0</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Khu vực</p>
+                                    <p class="font-medium text-gray-800" id="detail-location">Vị trí</p>
+                                </div>
+                            </div>
+
+                            <!-- Thông tin người bán -->
+                            <div class="flex items-center gap-4 mb-8 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                                <!-- THAY ẢNH AVATAR NGƯỜI BÁN TẠI ĐÂY -->
+                                <img id="detail-seller-avatar" src="images/avatar-default.jpg" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'" alt="Avatar" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm">
+                                <div>
+                                    <p class="font-bold text-gray-800 flex items-center" id="detail-seller-name">
+                                        Tên người bán <i class="fa-solid fa-circle-check text-blue-500 text-sm ml-1 ml-1" title="Đã xác minh"></i>
+                                    </p>
+                                    <p class="text-xs text-gray-500">Thành viên đối tác AgriLoop</p>
+                                </div>
+                            </div>
+
+                            <!-- Các nút Action -->
+                            <div class="flex flex-col sm:flex-row gap-3 mt-auto">
+                                <button onclick="openTransactionModal('buy')" class="flex-1 bg-agri-main hover:bg-agri-dark text-white py-3 px-4 rounded-lg font-medium transition flex justify-center items-center gap-2">
+                                    <i class="fa-solid fa-cart-shopping"></i> Yêu cầu mua
+                                </button>
+                                <button onclick="openTransactionModal('quote')" class="flex-1 bg-white hover:bg-gray-50 text-agri-dark border-2 border-agri-main py-3 px-4 rounded-lg font-medium transition flex justify-center items-center gap-2">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i> Xin báo giá
+                                </button>
+                                <button onclick="showToast('Đã lưu sản phẩm vào danh sách yêu thích')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 w-12 h-12 rounded-lg flex items-center justify-center transition">
+                                    <i class="fa-regular fa-heart text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs Thông tin chi tiết -->
+                <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">Mô tả sản phẩm & Đặc tính</h3>
+                    <div id="detail-description" class="prose max-w-none text-gray-600 whitespace-pre-line leading-relaxed">
+                        Mô tả chi tiết ở đây...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 4. ĐĂNG BÁN SẢN PHẨM ==================== -->
+        <section id="page-post-product" class="page-section bg-gray-50 py-10 min-h-screen">
+            <div class="container mx-auto px-4 max-w-4xl">
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div class="bg-agri-dark p-6 text-white text-center">
+                        <h1 class="text-2xl font-bold">Đăng Bán Phụ Phẩm</h1>
+                        <p class="text-agri-light mt-1">Kết nối nguồn cung của bạn với hàng ngàn người mua trên toàn quốc</p>
+                    </div>
+                    
+                    <form id="post-product-form" onsubmit="handlePostProduct(event)" class="p-6 md:p-8 space-y-6">
+                        
+                        <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg flex gap-3 text-sm text-yellow-800">
+                            <i class="fa-solid fa-circle-info mt-0.5"></i>
+                            <p><strong>Lưu ý Demo:</strong> Dữ liệu ảnh/video tải lên ở đây sẽ được chuyển thành định dạng chuỗi cục bộ để minh họa. Trong môi trường thực tế, chúng sẽ được tải lên máy chủ lưu trữ (Storage).</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Tên sản phẩm -->
+                            <div class="col-span-1 md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tên sản phẩm/phụ phẩm <span class="text-red-500">*</span></label>
+                                <input type="text" id="post-title" required placeholder="VD: Rơm cuộn khô vụ Đông Xuân, Bã mía sấy..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-agri-main focus:border-transparent outline-none">
+                            </div>
+
+                            <!-- Danh mục & Tỉnh thành -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Danh mục <span class="text-red-500">*</span></label>
+                                <select id="post-category" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-agri-main focus:border-transparent outline-none">
+                                    <option value="">-- Chọn danh mục --</option>
+                                    <option value="Rơm rạ">Rơm rạ</option>
+                                    <option value="Trấu & Tro trấu">Trấu & Tro trấu</option>
+                                    <option value="Bã mía & Bã sắn">Bã mía & Bã sắn</option>
+                                    <option value="Vỏ cà phê, Vỏ điều">Vỏ cà phê, Vỏ điều</option>
+                                    <option value="Mùn cưa, Dăm gỗ">Mùn cưa, Dăm gỗ</option>
+                                    <option value="Phân hữu cơ">Phân hữu cơ</option>
+                                    <option value="Khác">Phụ phẩm khác</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Khu vực có hàng <span class="text-red-500">*</span></label>
+                                <select id="post-location" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-agri-main focus:border-transparent outline-none">
+                                    <option value="">-- Chọn khu vực --</option>
+                                    <option value="Đồng bằng sông Cửu Long">Đồng bằng sông Cửu Long</option>
+                                    <option value="Đông Nam Bộ">Đông Nam Bộ</option>
+                                    <option value="Tây Nguyên">Tây Nguyên</option>
+                                    <option value="Miền Trung">Miền Trung</option>
+                                    <option value="Miền Bắc">Miền Bắc</option>
+                                </select>
+                            </div>
+
+                            <!-- Giá & Số lượng -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Giá bán (VND) <span class="text-red-500">*</span></label>
+                                <div class="flex">
+                                    <input type="number" id="post-price" min="0" required placeholder="Nhập số tiền..." class="w-full px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-agri-main outline-none">
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="flex-grow">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng <span class="text-red-500">*</span></label>
+                                    <input type="number" id="post-qty" min="1" required placeholder="VD: 50" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-agri-main outline-none">
+                                </div>
+                                <div class="w-1/3">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Đơn vị</label>
+                                    <select id="post-unit" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-agri-main outline-none">
+                                        <option value="Tấn">Tấn</option>
+                                        <option value="Kg">Kg</option>
+                                        <option value="Cuộn">Cuộn</option>
+                                        <option value="Khối">Khối (m3)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Ảnh & Video -->
+                            <div class="col-span-1 md:col-span-2 border border-dashed border-gray-300 rounded-xl p-6 bg-gray-50 text-center relative hover:bg-gray-100 transition cursor-pointer" onclick="document.getElementById('post-images').click()">
+                                <input type="file" id="post-images" multiple accept="image/*" class="hidden" onchange="previewImages(event)">
+                                <i class="fa-regular fa-image text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-600 font-medium">Nhấn để tải lên ảnh sản phẩm</p>
+                                <p class="text-xs text-gray-400 mt-1">Hỗ trợ JPG, PNG. Có thể chọn nhiều ảnh.</p>
+                                <!-- Khu vực Preview -->
+                                <div id="image-preview-container" class="mt-4 flex flex-wrap gap-2 justify-center hidden"></div>
+                            </div>
+
+                            <!-- Mô tả -->
+                            <div class="col-span-1 md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết <span class="text-red-500">*</span></label>
+                                <textarea id="post-desc" rows="5" required placeholder="Nhập thông tin về chất lượng, độ ẩm, quy cách đóng gói, điều kiện vận chuyển..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-agri-main outline-none"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-200 flex justify-end gap-3">
+                            <button type="button" onclick="navigate('home')" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Hủy</button>
+                            <button type="submit" class="px-6 py-2 bg-agri-main text-white rounded-lg hover:bg-agri-dark font-medium shadow-md">Đăng sản phẩm ngay</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 5. DASHBOARD CÁ NHÂN ==================== -->
+        <section id="page-dashboard" class="page-section bg-gray-50 py-8 min-h-screen">
+            <div class="container mx-auto px-4 max-w-6xl">
+                <h1 class="text-3xl font-bold text-gray-800 mb-6">Quản Lý Cá Nhân</h1>
+                
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Menu Trái -->
+                    <div class="w-full md:w-1/4">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="p-6 border-b border-gray-100 text-center">
+                                <div class="w-20 h-20 bg-agri-main text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-3" id="dash-avatar">U</div>
+                                <h3 class="font-bold text-lg text-gray-800" id="dash-name">Tên Demo</h3>
+                                <p class="text-sm text-gray-500">Thành viên AgriLoop</p>
+                            </div>
+                            <div class="p-2 flex flex-col gap-1">
+                                <button onclick="switchDashTab('my-products')" id="tab-btn-products" class="dash-tab-btn active w-full text-left px-4 py-3 rounded-lg hover:bg-green-50 text-agri-main font-medium bg-green-50 transition"><i class="fa-solid fa-box w-6 text-center"></i> Tin đăng của tôi</button>
+                                <button onclick="switchDashTab('my-orders')" id="tab-btn-orders" class="dash-tab-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 text-gray-600 font-medium transition"><i class="fa-solid fa-file-invoice w-6 text-center"></i> Lịch sử giao dịch</button>
+                                <button onclick="logout()" class="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-medium transition mt-4"><i class="fa-solid fa-right-from-bracket w-6 text-center"></i> Đăng xuất</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nội dung Phải -->
+                    <div class="w-full md:w-3/4">
+                        <!-- Tab Sản phẩm của tôi -->
+                        <div id="dash-tab-products" class="dash-tab-content block">
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h2 class="text-xl font-bold text-gray-800">Sản phẩm bạn đã đăng</h2>
+                                    <button onclick="navigate('post-product')" class="text-sm bg-agri-main text-white px-3 py-1.5 rounded hover:bg-agri-dark"><i class="fa-solid fa-plus mr-1"></i> Đăng thêm</button>
+                                </div>
+                                <div id="my-products-list" class="space-y-4">
+                                    <!-- Render JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab Lịch sử giao dịch -->
+                        <div id="dash-tab-orders" class="dash-tab-content hidden">
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                                <h2 class="text-xl font-bold text-gray-800 mb-6">Lịch sử Yêu cầu mua / Báo giá</h2>
+                                <div id="my-transactions-list" class="space-y-4">
+                                    <!-- Render JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== CÁC TRANG TĨNH (GIỚI THIỆU) ==================== -->
+        <section id="page-about" class="page-section py-16">
+            <div class="container mx-auto px-4 max-w-4xl text-center">
+                <h1 class="text-4xl font-bold text-gray-800 mb-6">Về AgriLoop</h1>
+                <img src="images/banner-gioi-thieu.jpg" onerror="this.src='https://images.unsplash.com/photo-1590682680695-43b964a3ae17?q=80&w=1200&auto=format&fit=crop'" alt="Giới thiệu" class="w-full h-64 object-cover rounded-2xl mb-8 shadow-md">
+                <div class="prose lg:prose-lg mx-auto text-gray-600 text-left">
+                    <p>AgriLoop ra đời với sứ mệnh tối ưu hóa giá trị của chuỗi sản xuất nông nghiệp tại Việt Nam. Thay vì đốt bỏ hoặc lãng phí, hàng triệu tấn phụ phẩm như rơm rạ, trấu, bã mía... nay đã có thể trở thành nguyên liệu đầu vào quý giá cho các ngành công nghiệp khác.</p>
+                    <p>Bản thân website này đang được chạy ở chế độ <strong>Mô phỏng Demo</strong> nhằm phục vụ mục đích trình bày ý tưởng dự án. Dữ liệu trên hệ thống lưu trực tiếp trên trình duyệt của bạn (LocalStorage) để đảm bảo tốc độ và tính tương tác cao nhất mà không cần cài đặt máy chủ phức tạp.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-gray-900 text-gray-300 pt-16 pb-8">
+        <div class="container mx-auto px-4 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                <div class="col-span-1 md:col-span-1">
+                    <div class="flex items-center mb-4">
+                        <i class="fa-solid fa-leaf text-agri-main text-2xl mr-2"></i>
+                        <span class="text-xl font-bold text-white tracking-tight">AgriLoop</span>
+                    </div>
+                    <p class="text-sm text-gray-400 mb-4">Nền tảng thương mại điện tử kết nối giao dịch phụ phẩm nông nghiệp, hướng tới nền kinh tế tuần hoàn tại Việt Nam.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fa-brands fa-facebook text-xl"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fa-brands fa-youtube text-xl"></i></a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Khám phá</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" onclick="navigate('marketplace')" class="hover:text-agri-main">Chợ phụ phẩm</a></li>
+                        <li><a href="#" onclick="navigate('post-product')" class="hover:text-agri-main">Đăng bán ngay</a></li>
+                        <li><a href="#" class="hover:text-agri-main">Mô hình tuần hoàn</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Hỗ trợ</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-agri-main">Hướng dẫn mua bán</a></li>
+                        <li><a href="#" class="hover:text-agri-main">Câu hỏi thường gặp (FAQ)</a></li>
+                        <li><a href="#" class="hover:text-agri-main">Chính sách bảo mật</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-bold mb-4 uppercase text-sm tracking-wider">Liên hệ Demo</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><i class="fa-solid fa-location-dot mr-2"></i> Trường Đại Học (Demo)</li>
+                        <li><i class="fa-solid fa-envelope mr-2"></i> contact@agriloop.vn.demo</li>
+                        <li><i class="fa-solid fa-phone mr-2"></i> 0123 456 789</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 text-sm text-center text-gray-500">
+                &copy; 2026 Bản quyền thuộc về Dự án AgriLoop. Giao diện Demo phục vụ thuyết trình.
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== MODALS (Popup) ==================== -->
+    <!-- 1. Auth Modal (Đăng nhập/Đăng ký) -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden transform scale-95 transition-transform" id="auth-modal-content">
+            <div class="flex border-b border-gray-100">
+                <button class="w-1/2 py-4 font-bold text-center border-b-2 border-agri-main text-agri-main bg-gray-50" id="tab-login">Đăng nhập</button>
+                <button class="w-1/2 py-4 font-bold text-center border-b-2 border-transparent text-gray-500 hover:bg-gray-50" onclick="alert('Chức năng Đăng ký chỉ hiển thị form. Vui lòng dùng tài khoản Demo đã điền sẵn ở mục Đăng nhập.')">Đăng ký</button>
+            </div>
+            <div class="p-8">
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">Chào mừng trở lại!</h3>
+                    <p class="text-gray-500 text-sm mt-1">Sử dụng tài khoản Demo bên dưới để trải nghiệm</p>
+                </div>
+                <form onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="login-email" value="nguoiban@demo.com" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-agri-main focus:bg-white" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                        <input type="password" id="login-pwd" value="123456" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-agri-main focus:bg-white" readonly>
+                    </div>
+                    <button type="submit" class="w-full bg-agri-main text-white py-3 rounded-lg font-bold hover:bg-agri-dark transition shadow-md mt-4">
+                        Đăng Nhập Ngay
+                    </button>
+                </form>
+                <button onclick="closeModal('auth-modal')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Transaction Modal (Giao dịch) -->
+    <div id="trans-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-2" id="trans-title">Tạo giao dịch</h3>
+            <p class="text-gray-500 text-sm mb-6" id="trans-subtitle">Gửi yêu cầu tới người bán</p>
+            
+            <form onsubmit="submitTransaction(event)" class="space-y-4">
+                <input type="hidden" id="trans-type">
+                <input type="hidden" id="trans-product-id">
+                
+                <div class="bg-gray-50 p-3 rounded text-sm mb-2 font-medium" id="trans-product-name-preview"></div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng mong muốn</label>
+                    <input type="number" id="trans-qty" min="1" required placeholder="Nhập số lượng..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-agri-main">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú (Tùy chọn)</label>
+                    <textarea id="trans-note" rows="3" placeholder="Yêu cầu về vận chuyển, đóng gói..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-agri-main"></textarea>
+                </div>
+                
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeModal('trans-modal')" class="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50">Hủy</button>
+                    <button type="submit" class="flex-1 bg-agri-main text-white py-2 rounded-lg font-medium hover:bg-agri-dark">Xác nhận gửi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Container chứa thông báo Toast -->
+    <div id="toast-container"></div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        /**
+         * HỆ THỐNG DỮ LIỆU MẪU (30 SẢN PHẨM ĐA DẠNG)
+         * Cấu trúc ảnh/video được cấu hình dùng đường dẫn tương đối (ví dụ: images/ten-anh.jpg).
+         * Nếu bạn chưa tạo thư mục 'images' và lưu ảnh, thẻ img sẽ tự động dùng 'onerror' fallback trên giao diện HTML.
+         */
+        const DEFAULT_PRODUCTS = [
+            { id: 'p1', name: 'Rơm cuộn khô vụ Đông Xuân', cat: 'Rơm rạ', price: 800000, unit: 'Tấn', qty: 50, loc: 'Đồng bằng sông Cửu Long', seller: 'HTX Nông nghiệp Xanh', img: 'images/rom-cuon-1.jpg', gallery: ['images/rom-cuon-1.jpg', 'images/rom-cuon-2.jpg'], video: 'videos/rom-cuon.mp4', desc: 'Rơm cuộn khô 100%, độ ẩm dưới 15%. Thích hợp làm thức ăn cho bò, phủ gốc cây trồng hoặc ủ phân.', date: '2026-10-18' },
+            { id: 'p2', name: 'Trấu rời chưa ép', cat: 'Trấu & Tro trấu', price: 600000, unit: 'Tấn', qty: 200, loc: 'Đồng bằng sông Cửu Long', seller: 'Nhà máy xay xát Chợ Gạo', img: 'images/trau-roi.jpg', desc: 'Trấu sạch, khô. Phù hợp làm chất đốt lò hơi hoặc đệm lót sinh học.', date: '2026-10-17' },
+            { id: 'p3', name: 'Bã mía sấy khô ép bánh', cat: 'Bã mía & Bã sắn', price: 1200000, unit: 'Tấn', qty: 30, loc: 'Miền Trung', seller: 'Nhà máy đường Lam Sơn', img: 'images/ba-mia.jpg', desc: 'Bã mía sau ép đường, sấy khô ép thành bánh. Nguyên liệu tuyệt vời để đốt lò hoặc làm bột giấy.', date: '2026-10-15' },
+            { id: 'p4', name: 'Vỏ cà phê Arabica phơi khô', cat: 'Vỏ cà phê, Vỏ điều', price: 1500000, unit: 'Tấn', qty: 15, loc: 'Tây Nguyên', seller: 'Nông trại Cà phê Cầu Đất', img: 'images/vo-ca-phe.jpg', desc: 'Vỏ cà phê Arabica giàu dinh dưỡng, rất tốt để ủ phân hữu cơ vi sinh.', date: '2026-10-19' },
+            { id: 'p5', name: 'Phân hữu cơ vi sinh từ phụ phẩm', cat: 'Phân hữu cơ', price: 2500000, unit: 'Tấn', qty: 100, loc: 'Đông Nam Bộ', seller: 'Cty Phân bón Sinh thái', img: 'images/phan-huu-co.jpg', desc: 'Phân ủ mục từ rơm rạ, phân bò và nấm Trichoderma. Bao 50kg.', date: '2026-10-10' },
+            { id: 'p6', name: 'Mùn cưa cao su sạch', cat: 'Mùn cưa, Dăm gỗ', price: 900000, unit: 'Tấn', qty: 80, loc: 'Đông Nam Bộ', seller: 'Xưởng mộc Bình Dương', img: 'images/mun-cua.jpg', desc: 'Mùn cưa sạch, không lẫn tạp chất nilong hay đá. Dùng trồng nấm rất tốt.', date: '2026-10-18' },
+            { id: 'p7', name: 'Bã sắn tươi', cat: 'Bã mía & Bã sắn', price: 400000, unit: 'Tấn', qty: 300, loc: 'Tây Nguyên', seller: 'NM Tinh bột sắn Đắk Lắk', img: 'images/ba-san.jpg', desc: 'Bã sắn tươi hàm lượng tinh bột còn lại 10%.', date: '2026-10-16' },
+            { id: 'p8', name: 'Tro trấu hun kỹ', cat: 'Trấu & Tro trấu', price: 1100000, unit: 'Tấn', qty: 40, loc: 'Đồng bằng sông Cửu Long', seller: 'Cơ sở Hun Trấu Sa Đéc', img: 'images/tro-trau.jpg', desc: 'Tro trấu hun đen (không thành tro trắng). Cải tạo đất, ươm cây kiểng cực tốt.', date: '2026-10-14' },
+            { id: 'p9', name: 'Cám gạo loại 1', cat: 'Khác', price: 5500000, unit: 'Tấn', qty: 10, loc: 'Miền Bắc', seller: 'Xí nghiệp lúa gạo Thái Bình', img: 'images/cam-gao.jpg', desc: 'Cám gạo thơm, mới xát, phục vụ chăn nuôi lợn, gà cá.', date: '2026-10-19' },
+            { id: 'p10', name: 'Vỏ lụa hạt điều', cat: 'Vỏ cà phê, Vỏ điều', price: 800000, unit: 'Tấn', qty: 50, loc: 'Đông Nam Bộ', seller: 'Xưởng tách điều Bình Phước', img: 'images/vo-lua-dieu.jpg', desc: 'Vỏ lụa ép dầu hoặc làm chất đốt sinh khối, nhiệt lượng rất cao.', date: '2026-10-12' },
+            { id: 'p11', name: 'Rơm vụ Mùa', cat: 'Rơm rạ', price: 750000, unit: 'Tấn', qty: 120, loc: 'Miền Bắc', seller: 'HTX Dịch vụ Nông nghiệp', img: 'images/rom-bac.jpg', desc: 'Rơm cuộn vụ mùa, màu sáng, cuộn chặt 15kg/cuộn.', date: '2026-10-17' },
+            { id: 'p12', name: 'Cùi bắp (Lõi ngô) khô', cat: 'Khác', price: 950000, unit: 'Tấn', qty: 60, loc: 'Miền Bắc', seller: 'Trang trại ngô Sơn La', img: 'images/cui-bap.jpg', desc: 'Lõi ngô phơi khô giòn, nguyên liệu nghiền làm thức ăn chăn nuôi hoặc trồng nấm.', date: '2026-10-18' },
+            // ... Tự động sinh thêm 18 sản phẩm để đủ 30
+        ];
+
+        // Tự động generate thêm dữ liệu cho phong phú demo
+        const cats = ['Khác', 'Rơm rạ', 'Trấu & Tro trấu', 'Bã mía & Bã sắn', 'Mùn cưa, Dăm gỗ'];
+        const locs = ['Đồng bằng sông Cửu Long', 'Đông Nam Bộ', 'Tây Nguyên', 'Miền Trung', 'Miền Bắc'];
+        for(let i=13; i<=30; i++) {
+            DEFAULT_PRODUCTS.push({
+                id: 'p'+i,
+                name: `Sản phẩm phụ phẩm thử nghiệm ${i}`,
+                cat: cats[i%5],
+                price: 500000 + (i*50000),
+                unit: 'Tấn',
+                qty: 10 + i,
+                loc: locs[i%5],
+                seller: `Cơ sở Demo ${i}`,
+                img: `images/demo-${i}.jpg`, // Giả lập ảnh
+                desc: 'Đây là dữ liệu mẫu tự động sinh ra phục vụ mục đích demo số lượng lớn trên giao diện web.',
+                date: '2026-10-10'
+            });
+        }
+
+        // BIẾN TRẠNG THÁI TOÀN CỤC
+        let products = [];
+        let currentUser = null;
+        let myTransactions = [];
+
+        // KHỞI TẠO ỨNG DỤNG
+        function initApp() {
+            // 1. Tải dữ liệu từ LocalStorage
+            loadData();
+            
+            // 2. Render UI
+            updateAuthUI();
+            renderFeaturedHome();
+            
+            // 3. Xử lý routing dựa trên hash URL nếu có, nếu không ở trang chủ
+            const hash = window.location.hash.replace('#', '') || 'home';
+            navigate(hash, false); // false = không push thêm history
+        }
+
+        function loadData() {
+            const savedProds = localStorage.getItem('agri_products');
+            if (savedProds) {
+                products = JSON.parse(savedProds);
+            } else {
+                products = [...DEFAULT_PRODUCTS];
+                localStorage.setItem('agri_products', JSON.stringify(products));
+            }
+
+            const savedUser = localStorage.getItem('agri_user');
+            if (savedUser) currentUser = JSON.parse(savedUser);
+
+            const savedTrans = localStorage.getItem('agri_transactions');
+            if (savedTrans) myTransactions = JSON.parse(savedTrans);
+        }
+
+        function saveData() {
+            localStorage.setItem('agri_products', JSON.stringify(products));
+            if(currentUser) localStorage.setItem('agri_user', JSON.stringify(currentUser));
+            localStorage.setItem('agri_transactions', JSON.stringify(myTransactions));
+        }
+
+        // ĐIỀU HƯỚNG SPA (Thay đổi trang mà không reload)
+        function navigate(pageId, pushState = true) {
+            // Ẩn tất cả section
+            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+            
+            // Cập nhật Nav menu active
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('text-agri-main', 'border-b-2', 'border-agri-main');
+                if(el.dataset.target === pageId) {
+                    el.classList.add('text-agri-main', 'border-b-2', 'border-agri-main');
+                }
+            });
+
+            // Hiển thị page mục tiêu
+            const targetPage = document.getElementById(`page-${pageId}`);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            } else {
+                document.getElementById('page-home').classList.add('active'); // fallback
+                pageId = 'home';
+            }
+
+            // Logic cụ thể cho từng trang
+            if (pageId === 'marketplace') {
+                applyFilters(); // render lại list
+            } else if (pageId === 'dashboard') {
+                if(!currentUser) {
+                    showToast('Vui lòng đăng nhập để vào trang cá nhân', 'error');
+                    openModal('auth-modal');
+                    navigate('home', false);
+                    return;
+                }
+                renderDashboard();
+            } else if (pageId === 'post-product') {
+                if(!currentUser) {
+                    showToast('Vui lòng đăng nhập để đăng bán', 'error');
+                    openModal('auth-modal');
+                    navigate('home', false);
+                    return;
+                }
+            }
+
+            // Đóng menu mobile nếu đang mở
+            document.getElementById('mobile-menu').classList.add('hidden');
+
+            // Cập nhật URL Hash để có thể F5 không mất trang
+            if(pushState) {
+                window.history.pushState(null, '', `#${pageId}`);
+            }
+            window.scrollTo(0,0);
+        }
+
+        // ================= XỬ LÝ AUTH (ĐĂNG NHẬP/ĐĂNG KÝ) =================
+        function updateAuthUI() {
+            const authContainer = document.getElementById('auth-container');
+            const mobileAuthContainer = document.getElementById('mobile-auth-container');
+            
+            if (currentUser) {
+                const userHtml = `
+                    <div class="relative group cursor-pointer">
+                        <div class="flex items-center gap-2" onclick="navigate('dashboard')">
+                            <div class="w-8 h-8 bg-agri-light text-agri-dark rounded-full flex items-center justify-center font-bold">${currentUser.name.charAt(0)}</div>
+                            <span class="font-medium text-gray-700">${currentUser.name}</span>
+                        </div>
+                    </div>
+                `;
+                authContainer.innerHTML = userHtml;
+                mobileAuthContainer.innerHTML = `
+                    <p class="text-gray-500 mb-2 text-sm">Xin chào, ${currentUser.name}</p>
+                    <button onclick="navigate('dashboard')" class="block w-full text-left py-2 font-medium text-agri-main">Trang cá nhân</button>
+                    <button onclick="logout()" class="block w-full text-left py-2 text-red-500">Đăng xuất</button>
+                `;
+            } else {
+                const loginHtml = `
+                    <button onclick="openModal('auth-modal')" class="text-agri-dark font-medium hover:text-agri-main transition">Đăng nhập</button>
+                    <button onclick="openModal('auth-modal')" class="bg-agri-main text-white px-5 py-2 rounded-lg font-medium hover:bg-agri-dark transition shadow-sm">Đăng ký</button>
+                `;
+                authContainer.innerHTML = loginHtml;
+                mobileAuthContainer.innerHTML = `
+                    <button onclick="openModal('auth-modal')" class="block w-full bg-agri-main text-white py-2 rounded font-medium text-center">Đăng nhập / Đăng ký</button>
+                `;
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            // Đăng nhập giả lập
+            currentUser = {
+                email: document.getElementById('login-email').value,
+                name: 'Tài khoản Demo',
+                role: 'seller'
+            };
+            saveData();
+            updateAuthUI();
+            closeModal('auth-modal');
+            showToast('Đăng nhập thành công!');
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('agri_user');
+            updateAuthUI();
+            navigate('home');
+            showToast('Đã đăng xuất');
+        }
+
+        // ================= CÁC HÀM UI DÙNG CHUNG =================
+        function formatPrice(price) {
+            return new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+            const icon = type === 'error' ? '<i class="fa-solid fa-circle-exclamation text-red-500 text-xl"></i>' : '<i class="fa-solid fa-circle-check text-green-500 text-xl"></i>';
+            toast.innerHTML = `${icon} <span class="font-medium text-gray-700">${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // Mẫu Render 1 Thẻ Sản Phẩm (Card)
+        function createProductCard(prod) {
+            // Fallback image mặc định nếu ảnh bị lỗi (chưa chép vào thư mục images)
+            const fallbackImg = "https://images.unsplash.com/photo-1530836369250-ef71a3f5e4bc?q=80&w=500&auto=format&fit=crop";
+            
+            return `
+                <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden group cursor-pointer flex flex-col h-full" onclick="viewProductDetail('${prod.id}')">
+                    <div class="relative h-48 overflow-hidden bg-gray-200">
+                        <img src="${prod.img}" onerror="this.src='${fallbackImg}'" alt="${prod.name}" class="w-full h-full object-cover img-hover-zoom">
+                        <div class="absolute top-2 left-2 bg-agri-light text-agri-dark text-xs font-bold px-2 py-1 rounded shadow-sm">${prod.cat}</div>
+                    </div>
+                    <div class="p-4 flex flex-col flex-grow">
+                        <h3 class="font-bold text-gray-800 line-clamp-2 mb-1 group-hover:text-agri-main transition-colors">${prod.name}</h3>
+                        <p class="text-agri-main font-bold text-lg mb-2">${formatPrice(prod.price)} / <span class="text-sm font-normal">${prod.unit}</span></p>
+                        
+                        <div class="mt-auto pt-3 border-t border-gray-100 space-y-1 text-sm text-gray-500">
+                            <p><i class="fa-solid fa-box w-4 text-center"></i> ${prod.qty} ${prod.unit} sẵn có</p>
+                            <p><i class="fa-solid fa-location-dot w-4 text-center"></i> ${prod.loc}</p>
+                            <p class="truncate"><i class="fa-solid fa-store w-4 text-center"></i> ${prod.seller}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ================= TRANG CHỦ =================
+        function renderFeaturedHome() {
+            const container = document.getElementById('home-featured-products');
+            // Lấy 8 sản phẩm mới nhất làm nổi bật
+            const featured = [...products].reverse().slice(0, 8);
+            container.innerHTML = featured.map(p => createProductCard(p)).join('');
+        }
+
+        function performHomeSearch() {
+            const keyword = document.getElementById('home-search').value;
+            navigate('marketplace');
+            document.getElementById('filter-search').value = keyword;
+            applyFilters();
+        }
+
+        function filterByCategory(cat) {
+            navigate('marketplace');
+            document.getElementById('filter-category').value = cat;
+            applyFilters();
+        }
+
+        // ================= CHỢ PHỤ PHẨM (TÌM KIẾM & LỌC) =================
+        function applyFilters() {
+            const search = document.getElementById('filter-search').value.toLowerCase();
+            const cat = document.getElementById('filter-category').value;
+            const loc = document.getElementById('filter-location').value;
+            const sort = document.getElementById('filter-sort').value;
+
+            let filtered = products.filter(p => {
+                const matchSearch = p.name.toLowerCase().includes(search);
+                const matchCat = cat === 'all' || p.cat === cat;
+                const matchLoc = loc === 'all' || p.loc === loc;
+                return matchSearch && matchCat && matchLoc;
+            });
+
+            // Sắp xếp
+            if (sort === 'price-asc') filtered.sort((a,b) => a.price - b.price);
+            else if (sort === 'price-desc') filtered.sort((a,b) => b.price - a.price);
+            else filtered.reverse(); // Mới nhất
+
+            const container = document.getElementById('marketplace-grid');
+            const emptyState = document.getElementById('marketplace-empty');
+            
+            document.getElementById('marketplace-stats').innerHTML = `Đang hiển thị <span class="font-bold text-gray-800">${filtered.length}</span> sản phẩm`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+                container.innerHTML = filtered.map(p => createProductCard(p)).join('');
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-search').value = '';
+            document.getElementById('filter-category').value = 'all';
+            document.getElementById('filter-location').value = 'all';
+            document.getElementById('filter-sort').value = 'newest';
+            applyFilters();
+        }
+
+        // ================= CHI TIẾT SẢN PHẨM =================
+        let currentDetailProduct = null;
+
+        function viewProductDetail(id) {
+            const prod = products.find(p => p.id === id);
+            if(!prod) return;
+            currentDetailProduct = prod;
+
+            // Đổ dữ liệu text
+            document.getElementById('detail-name').textContent = prod.name;
+            document.getElementById('detail-category').textContent = prod.cat;
+            document.getElementById('detail-price').textContent = `${formatPrice(prod.price)} / ${prod.unit}`;
+            document.getElementById('detail-quantity').textContent = `${prod.qty} ${prod.unit}`;
+            document.getElementById('detail-location').textContent = prod.loc;
+            document.getElementById('detail-seller-name').innerHTML = `${prod.seller} <i class="fa-solid fa-circle-check text-blue-500 text-sm ml-1" title="Đã xác minh"></i>`;
+            document.getElementById('detail-description').textContent = prod.desc;
+            
+            // Xử lý Ảnh
+            const mainImg = document.getElementById('detail-main-img');
+            const fallbackImg = "https://images.unsplash.com/photo-1530836369250-ef71a3f5e4bc?q=80&w=800&auto=format&fit=crop";
+            mainImg.src = prod.img;
+            mainImg.onerror = function() { this.src = fallbackImg; };
+
+            // Thư viện ảnh (Gallery)
+            const thumbContainer = document.getElementById('detail-thumbnails');
+            thumbContainer.innerHTML = '';
+            
+            // Luôn có ít nhất ảnh chính trong gallery
+            const gallery = prod.gallery && prod.gallery.length > 0 ? prod.gallery : [prod.img];
+            
+            gallery.forEach(imgSrc => {
+                const thumb = document.createElement('div');
+                thumb.className = "w-20 h-20 flex-shrink-0 rounded bg-gray-200 cursor-pointer border-2 border-transparent hover:border-agri-main overflow-hidden";
+                thumb.onclick = () => { mainImg.src = imgSrc; };
+                thumb.innerHTML = `<img src="${imgSrc}" onerror="this.src='${fallbackImg}'" class="w-full h-full object-cover">`;
+                thumbContainer.appendChild(thumb);
+            });
+
+            // Xử lý Video (Nếu có)
+            const videoContainer = document.getElementById('detail-video-container');
+            const videoTag = document.getElementById('detail-video');
+            if(prod.video) {
+                // Thêm nút xem video vào gallery
+                const vidBtn = document.createElement('div');
+                vidBtn.className = "w-20 h-20 flex-shrink-0 rounded bg-black flex items-center justify-center cursor-pointer hover:bg-gray-800 text-white";
+                vidBtn.onclick = () => { 
+                    videoContainer.classList.remove('hidden');
+                    videoTag.play();
+                };
+                vidBtn.innerHTML = `<i class="fa-solid fa-play text-2xl"></i>`;
+                thumbContainer.appendChild(vidBtn);
+                
+                // Set src cho video
+                videoTag.querySelector('source').src = prod.video;
+                videoTag.load();
+            } else {
+                videoContainer.classList.add('hidden');
+                videoTag.pause();
+            }
+
+            navigate('product-detail');
+        }
+
+        function closeVideo() {
+            document.getElementById('detail-video-container').classList.add('hidden');
+            document.getElementById('detail-video').pause();
+        }
+
+        // ================= GIAO DỊCH (MUA / BÁO GIÁ) =================
+        function openTransactionModal(type) {
+            if(!currentUser) {
+                showToast('Bạn cần đăng nhập để thực hiện giao dịch', 'error');
+                openModal('auth-modal');
+                return;
+            }
+            if(!currentDetailProduct) return;
+
+            document.getElementById('trans-type').value = type;
+            document.getElementById('trans-product-id').value = currentDetailProduct.id;
+            document.getElementById('trans-title').textContent = type === 'buy' ? 'Yêu cầu Mua Hàng' : 'Yêu cầu Báo Giá';
+            document.getElementById('trans-product-name-preview').textContent = `${currentDetailProduct.name} (${formatPrice(currentDetailProduct.price)}/${currentDetailProduct.unit})`;
+            document.getElementById('trans-qty').value = '';
+            document.getElementById('trans-note').value = '';
+
+            openModal('trans-modal');
+        }
+
+        function submitTransaction(e) {
+            e.preventDefault();
+            const type = document.getElementById('trans-type').value;
+            const qty = document.getElementById('trans-qty').value;
+            
+            // Lưu giao dịch vào LocalStorage
+            myTransactions.unshift({
+                id: 'TR' + Date.now(),
+                type: type,
+                productName: currentDetailProduct.name,
+                seller: currentDetailProduct.seller,
+                qty: qty + ' ' + currentDetailProduct.unit,
+                date: new Date().toLocaleDateString('vi-VN'),
+                status: 'Chờ xác nhận'
+            });
+            saveData();
+            
+            closeModal('trans-modal');
+            showToast('Đã gửi yêu cầu thành công tới người bán!');
+            
+            // Chuyển về dashboard xem lịch sử sau 1.5s
+            setTimeout(() => {
+                navigate('dashboard');
+                switchDashTab('my-orders');
+            }, 1500);
+        }
+
+        // ================= ĐĂNG BÁN SẢN PHẨM =================
+        // Dùng mảng tạm lưu Base64 ảnh preview (Chỉ cho bản Demo)
+        let tempImageBase64 = null;
+
+        function previewImages(event) {
+            const container = document.getElementById('image-preview-container');
+            const files = event.target.files;
+            
+            if(files && files[0]) {
+                container.innerHTML = '';
+                container.classList.remove('hidden');
+                
+                // Đọc file đầu tiên để làm ảnh đại diện cho bản Demo
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    tempImageBase64 = e.target.result;
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = "w-24 h-24 object-cover rounded border border-gray-300";
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(files[0]);
+            }
+        }
+
+        function handlePostProduct(e) {
+            e.preventDefault();
+            
+            // Tạo đối tượng sản phẩm mới
+            const newProd = {
+                id: 'P_USR_' + Date.now(),
+                name: document.getElementById('post-title').value,
+                cat: document.getElementById('post-category').value,
+                loc: document.getElementById('post-location').value,
+                price: parseInt(document.getElementById('post-price').value),
+                qty: parseInt(document.getElementById('post-qty').value),
+                unit: document.getElementById('post-unit').value,
+                desc: document.getElementById('post-desc').value,
+                seller: currentUser.name,
+                // Dùng ảnh base64 nếu người dùng chọn file, ngược lại dùng fallback tĩnh
+                img: tempImageBase64 || 'https://images.unsplash.com/photo-1595841696677-6489ff3f8cd1?q=80&w=500&auto=format&fit=crop',
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            // Thêm vào mảng toàn cục và lưu
+            products.unshift(newProd);
+            saveData();
+            
+            showToast('Đăng tin thành công!');
+            
+            // Reset form
+            document.getElementById('post-product-form').reset();
+            document.getElementById('image-preview-container').innerHTML = '';
+            document.getElementById('image-preview-container').classList.add('hidden');
+            tempImageBase64 = null;
+
+            // Chuyển hướng
+            navigate('dashboard');
+            switchDashTab('my-products');
+        }
+
+        // ================= DASHBOARD CÁ NHÂN =================
+        function switchDashTab(tabId) {
+            // Đổi màu nút
+            document.querySelectorAll('.dash-tab-btn').forEach(btn => {
+                btn.classList.remove('bg-green-50', 'text-agri-main');
+                btn.classList.add('text-gray-600');
+            });
+            const activeBtn = document.getElementById(`tab-btn-${tabId.split('-')[1]}`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-green-50', 'text-agri-main');
+                activeBtn.classList.remove('text-gray-600');
+            }
+
+            // Đổi nội dung content
+            document.querySelectorAll('.dash-tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`dash-tab-${tabId.split('-')[1]}`).classList.remove('hidden');
+            document.getElementById(`dash-tab-${tabId.split('-')[1]}`).classList.add('block');
+        }
+
+        function renderDashboard() {
+            if(!currentUser) return;
+            document.getElementById('dash-name').textContent = currentUser.name;
+            document.getElementById('dash-avatar').textContent = currentUser.name.charAt(0);
+
+            // Render Sản phẩm của tôi
+            const myProds = products.filter(p => p.seller === currentUser.name);
+            const prodContainer = document.getElementById('my-products-list');
+            if(myProds.length === 0) {
+                prodContainer.innerHTML = `<div class="text-center py-8 text-gray-500">Bạn chưa đăng bán sản phẩm nào.</div>`;
+            } else {
+                prodContainer.innerHTML = myProds.map(p => `
+                    <div class="flex items-center gap-4 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        <img src="${p.img}" class="w-16 h-16 rounded object-cover">
+                        <div class="flex-grow">
+                            <h4 class="font-bold text-gray-800">${p.name}</h4>
+                            <p class="text-sm text-gray-500">${formatPrice(p.price)} / ${p.unit} | SL: ${p.qty}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="text-blue-500 hover:bg-blue-50 p-2 rounded" onclick="viewProductDetail('${p.id}')"><i class="fa-solid fa-eye"></i></button>
+                            <button class="text-red-500 hover:bg-red-50 p-2 rounded" onclick="deleteMyProduct('${p.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Render Lịch sử giao dịch
+            const transContainer = document.getElementById('my-transactions-list');
+            if(myTransactions.length === 0) {
+                transContainer.innerHTML = `<div class="text-center py-8 text-gray-500">Chưa có giao dịch nào.</div>`;
+            } else {
+                transContainer.innerHTML = myTransactions.map(t => `
+                    <div class="p-4 border border-gray-200 rounded-lg relative">
+                        <div class="absolute top-4 right-4 text-xs font-bold px-2 py-1 rounded bg-yellow-100 text-yellow-700">${t.status}</div>
+                        <div class="font-bold text-gray-800 text-lg mb-1">${t.type === 'buy' ? 'YÊU CẦU MUA' : 'YÊU CẦU BÁO GIÁ'}</div>
+                        <p class="text-gray-600 font-medium">${t.productName}</p>
+                        <div class="text-sm text-gray-500 mt-2 flex gap-4">
+                            <span><i class="fa-solid fa-box"></i> ${t.qty}</span>
+                            <span><i class="fa-solid fa-store"></i> ${t.seller}</span>
+                            <span><i class="fa-regular fa-calendar"></i> ${t.date}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function deleteMyProduct(id) {
+            if(confirm('Bạn có chắc chắn muốn xóa tin đăng này?')) {
+                products = products.filter(p => p.id !== id);
+                saveData();
+                renderDashboard();
+                showToast('Đã xóa thành công');
+            }
+        }
+
+        // ================= KÍCH HOẠT =================
+        // Khởi động app khi tải trang xong
+        window.addEventListener('DOMContentLoaded', initApp);
+        
+        // Bắt sự kiện back/forward của trình duyệt để xử lý SPA routing
+        window.addEventListener('popstate', () => {
+            const hash = window.location.hash.replace('#', '') || 'home';
+            navigate(hash, false);
+        });
+
+    </script>
+</body>
+</html>
